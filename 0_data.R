@@ -437,71 +437,69 @@ rm(sites_ugsg, community_ugsg, ugsg_data)
 
 
 # Save outputs ------------------------------------------------------------
-# Remove sites with fewer than 5 species
-low_species_sites <- names(which(table(sites$id) < 5))
+# Save sites and community data to CSV
+write.csv(sites, file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/all_sites.csv')
+write.csv(community, file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/occurrences.csv')
 
-# Filter out the sites and community data for those sites with fewer than 5 species
-sites <- sites[!sites$id %in% low_species_sites, ]
-community <- community[!community$id %in% low_species_sites, ]
-rm(low_species_sites)
-
-# Save filtered sites and community data to CSV
-write.csv(sites, file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/sites_5sp.csv')
-write.csv(community, file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/occurrences_5sp.csv')
-
-# Split data by continents
-european_sites <- sites[sites$longitude > -50, ]
-american_sites <- sites[sites$longitude < -50, ]
-
-# Subset community data based on the continent-specific sites
-european_communities <- community[community$id %in% european_sites$id, ]
-american_communities <- community[community$id %in% american_sites$id, ]
-
-# Load taxonomic order data
+# Import the order for each genus
 taxonomic_order <- read.csv('/Users/lucie/Documents/Work/Data/Data_Norman/Order.csv')
 
-# Extract species lists for Anura and Urodela
-anura_species <- taxonomic_order[taxonomic_order$Order == 'Anura', 1]
-urodela_species <- taxonomic_order[taxonomic_order$Order == 'Urodela', 1]
+# Function to subset site and community data based on continent and taxonomic order
+subset_continent_taxa <- function(site_data, com_data, continent = 'America', order = 'Anura', write = TRUE) {
+  
+  # Filter data for American or non-American sites based on longitude
+  if(continent == 'America') {
+    site_data <- site_data[site_data$longitude < -50, ]  # For American sites (longitude > -50)
+    com_data <- com_data[com_data$id %in% site_data$id, ] # Subset community data to match filtered site IDs
+  } else {
+    site_data <- site_data[site_data$longitude > -50, ]  # For non-American sites (longitude < -50)
+    com_data <- com_data[com_data$id %in% site_data$id, ] # Subset community data to match filtered site IDs
+  }
+  
+  # Subset species based on the specified taxonomic order
+  species <- taxonomic_order[taxonomic_order$Order == order, 1]  # Get species from the taxonomic order data matching the specified order
+  
+  # Filter community data based on species that belong to the specified taxonomic order
+  com_data <- com_data[unlist(lapply(strsplit(com_data$species, '_'), function(x) x[1])) %in% species, ]
+  
+  # Subset site data to only include sites present in the filtered community data
+  site_data <- site_data[site_data$id %in% com_data$id, ]
+  
+  # Identify sites with fewer than 5 documented species
+  low_species_sites <- names(which(table(site_data$id) < 5))
+  
+  # Filter out these sites and corresponding community data
+  site_data <- site_data[!site_data$id %in% low_species_sites, ]
+  com_data <- com_data[!com_data$id %in% low_species_sites, ]
+  
+  # Remove intermediate variables to free memory
+  rm(low_species_sites, species)
+  
+  # Combine site and community data into a list for output
+  out <- list(site = site_data, community = com_data)
+  
+  # If the write argument is TRUE, save the filtered data as CSV files
+  if(write) {
+    write.csv(site_data, 
+              file = paste0('/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/', 
+                            continent, '_', order, '_site.csv'))  # Save site data
+    write.csv(com_data, 
+              file = paste0('/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/', 
+                            continent, '_', order, '_community.csv'))  # Save community data
+  } else {
+    return(out)  # If write is FALSE, return the filtered data as a list
+  }
+}
 
-# Split European communities by taxonomic groups
-european_anura_communities <- european_communities[unlist(
-  lapply(strsplit(european_communities$species, '_'), function(x) x[1])) %in% anura_species, ]
-european_anura_sites <- european_sites[european_sites$id %in% european_anura_communities$id, ]
-
-european_urodela_communities <- european_communities[unlist(
-  lapply(strsplit(european_communities$species, '_'), function(x) x[1])) %in% urodela_species, ]
-european_urodela_sites <- european_sites[european_sites$id %in% european_urodela_communities$id, ]
-
-# Split American communities by taxonomic groups
-american_anura_communities <- american_communities[unlist(
-  lapply(strsplit(american_communities$species, '_'), function(x) x[1])) %in% anura_species, ]
-american_anura_sites <- american_sites[american_sites$id %in% american_anura_communities$id, ]
-
-american_urodela_communities <- american_communities[unlist(
-  lapply(strsplit(american_communities$species, '_'), function(x) x[1])) %in% urodela_species, ]
-american_urodela_sites <- american_sites[american_sites$id %in% american_urodela_communities$id, ]
-
-# Save the Europe and America Anura and Urodela communities and corresponding sites data to CSV files
-write.csv(european_anura_communities, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/Europe_Anura_communities.csv')
-write.csv(european_anura_sites, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/Europe_Anura_sites.csv')
-
-write.csv(european_urodela_communities, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/Europe_Urodela_communities.csv')
-write.csv(european_urodela_sites, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/Europe_Urodela_sites.csv')
-
-write.csv(american_anura_communities, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/America_Anura_communities.csv')
-write.csv(american_anura_sites, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/America_Anura_sites.csv')
-
-write.csv(american_urodela_communities, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/America_Urodela_communities.csv')
-write.csv(american_urodela_sites, 
-          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/America_Urodela_sites.csv')
-
-
-
+# Loop over each continent ('America' and 'Europe')
+for(i in c('America', 'Europe')) {
+  
+  # For each continent, loop over each taxonomic order ('Anura' and 'Urodela')
+  for(j in c('Anura', 'Urodela')) {
+    
+    # Call the subset_continent_taxa function with the current continent (i) and taxonomic order (j)
+    # The 'sites' and 'community' datasets are passed as inputs to be filtered
+    subset_continent_taxa(sites, community, i, j)
+    
+  }
+}

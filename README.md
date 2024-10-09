@@ -22,7 +22,7 @@ This dataset was compiled by K. Marske and collaborators in 2014. Below is an ou
 
 Note: Some records were excluded from the community data where identification did not reach the species level. This exclusion accounts for 438 occurrences, out of a total of over 33,700 occurrences, spread across 9,100+ locations.
 
-Note: All life stages have been kept, based on the assumption that the presence of eggs or tadpoles implies the existence of adults capable of reproduction.
+Note: All life stages have been kept, based on the assumption that the presence of eggs or tadpoles implies the presence of adults capable of reproduction.
 
 Note: Additional databases will follow this structure, although some data might be missing.
 
