@@ -439,7 +439,8 @@ rm(sites_ugsg, community_ugsg, ugsg_data)
 # Save outputs ------------------------------------------------------------
 # Save sites and community data to CSV
 write.csv(sites, file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/all_sites.csv')
-write.csv(community, file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/occurrences.csv')
+write.csv(community, 
+          file = '/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/all_occurrences.csv')
 
 # Import the order for each genus
 taxonomic_order <- read.csv('/Users/lucie/Documents/Work/Data/Data_Norman/Order.csv')
@@ -469,14 +470,11 @@ subset_continent_taxa <- function(site_data, com_data, continent = 'America', or
   low_species_sites <- names(which(table(site_data$id) < 5))
   
   # Filter out these sites and corresponding community data
-  site_data <- site_data[!site_data$id %in% low_species_sites, ]
-  com_data <- com_data[!com_data$id %in% low_species_sites, ]
+  site_data <- unique(site_data[!site_data$id %in% low_species_sites, ])
+  com_data <- unique(com_data[!com_data$id %in% low_species_sites, ])
   
   # Remove intermediate variables to free memory
   rm(low_species_sites, species)
-  
-  # Combine site and community data into a list for output
-  out <- list(site = site_data, community = com_data)
   
   # If the write argument is TRUE, save the filtered data as CSV files
   if(write) {
@@ -487,6 +485,8 @@ subset_continent_taxa <- function(site_data, com_data, continent = 'America', or
               file = paste0('/Users/lucie/Documents/Work/Data/Data_Norman/Community data/Processed data/', 
                             continent, '_', order, '_community.csv'))  # Save community data
   } else {
+    # Combine site and community data into a list for output
+    out <- list(sites = site_data, community = com_data)
     return(out)  # If write is FALSE, return the filtered data as a list
   }
 }
@@ -496,6 +496,8 @@ for(i in c('America', 'Europe')) {
   
   # For each continent, loop over each taxonomic order ('Anura' and 'Urodela')
   for(j in c('Anura', 'Urodela')) {
+    
+    print(paste(i, j))
     
     # Call the subset_continent_taxa function with the current continent (i) and taxonomic order (j)
     # The 'sites' and 'community' datasets are passed as inputs to be filtered
