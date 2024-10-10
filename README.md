@@ -42,4 +42,25 @@ This dataset was obtained from [GBIF](GBIF.org) (accessed on 25 September 2024):
 #### D. **Additional Datanase: Grinnell Resurvey Project 2005**
 
 ### 2. Final dataset
-Eventually, we are ending up with 169,196 sites that encompass 638,012 amphibian recordings. These files have been saved as `sites_5sp.csv` and `occurrences_5sp.csv`.
+Eventually, we are ending up with 69,498 sites for Anura in America, 5,115 sites for Urodela in America, 96,822 sites for Anura in Europe, and 82,656 sites for Urodela in Europe.
+
+---
+
+### 3. Genetic Lineage Processing Script
+
+This script processes and cleans genetic lineage data, converting it into spatial polygons and matching it with community data for downstream analysis. The main steps are as follows:
+
+1. **Reading and filtering lineage files**:  
+   The script imports genetic lineage CSV files and selects only the relevant columns (species, genus, lineage, latitude, and longitude). Duplicate entries are removed, and lineages with fewer than 3 records are excluded.
+
+2. **Creating spatial polygons for lineages**:  
+   Using the latitude and longitude data, the script calculates convex hulls to represent each lineage's geographic range. These ranges are converted into polygon shapefiles in the WGS84 coordinate reference system.
+
+3. **Importing community data**:  
+   For each species, the script imports community data from a corresponding dataset based on the species' taxonomic order. These data include site information such as location and species occurrences.
+
+4. **Matching genetic lineages with community data**:  
+   A spatial join is performed between the polygon shapefiles representing lineages and the community data. This step assigns lineages to community sites based on spatial overlap. The results are saved into new CSV files, either by appending to existing files or creating new ones if none exist.
+
+5. **Processing pipeline**:  
+   The script applies these steps to all available lineage files and saves the final cleaned and matched data for further phylogeographic analysis.
