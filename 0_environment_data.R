@@ -15,7 +15,6 @@ gc(reset = TRUE)
 library(raster)       # For raster data manipulation
 library(sf)           # For modern spatial data handling
 library(progress)     # For progress bar
-library(dplyr)         # For data manipulation
 
 # Function to generate meaningful file names
 generate_file_names <- function(files) {
@@ -78,6 +77,7 @@ sites <- read.csv('../data/processed/America_Anura_site.csv')[, c(2:4, 14)]
 # sites <- read.csv('../data/processed/America_Urodela_site.csv')[, c(2:4, 14)]
 
 # Convert site data to an sf object for spatial operations
+# EPSG code 4326 corresponds to WGS84
 sites_sf <- st_as_sf(sites, coords = c("longitude", "latitude"), crs = 4326)
 
 # List all .tif files in the directories
@@ -116,46 +116,41 @@ extracted_data <- do.call(cbind, extracted_data_list)
 # Combine extracted data with site identifiers
 sites <- cbind(st_drop_geometry(sites_sf), extracted_data)
 
-# Select and rename relevant columns using dplyr
-cols_mapping <- c('Code' = 'Code', 
-                  'Lat' = 'Lat', 
-                  'Long' = 'Long', 
-                  'Bio_1' = 'Temp', 
-                  'Bio_4' = 'TSeas', 
-                  'Bio_12' = 'Rain', 
-                  'Bio_15' = 'RSeas', 
-                  'elevation' = 'Ele', 
-                  'vegetation' = 'Veg', 
-                  'solar' = 'Solar', 
-                  'wind' = 'Wind', 
-                  'landcover' = 'LC')
-
-sites <- sites %>%
-  select(all_of(names(cols_mapping))) %>%
-  rename(all_of(cols_mapping))
-
-# Recode factor levels for 'LC'
-new_levels <- c('Broad_ever', 'Broad_deciduous', 'Needle_ever', 
-                'Needle_deciduous', 'Mixed_forest', 'Tree_open', 
-                'Shrudb', 'Herbaceous', 'Sparse_veg', 
-                'Crop', 'Paddy_field', 'Veg_mosaic', 
-                'Wetland', 'Urban', 'Water_bodies')
-
-sites <- sites %>%
-  mutate(
-    LC = factor(LC, levels = new_levels))
-
 # Post-processing: Aggregate environmental variables
-sites <- sites %>%
-  mutate(
-    elevation = rowSums(select(., starts_with("Ele_")), na.rm = TRUE),
-    vegetation = rowSums(select(., starts_with("Veg_")), na.rm = TRUE),
-    solar = rowMeans(select(., starts_with("Solar_")), na.rm = TRUE),
-    wind = rowMeans(select(., starts_with("Wind_")), na.rm = TRUE),
-    landcover = rowMeans(select(., starts_with("LC_")), na.rm = TRUE)) %>%
-  mutate(
-    elevation = ifelse(elevation < -4000, NA, elevation),
-    vegetation = ifelse(vegetation > 200, NA, vegetation))
+sites$elevation <- rowSums(sites[, grepl('Ele_', names(sites))], na.rm = TRUE)
+sites$vegetation <- rowSums(sites[, grepl('Veg_', names(sites))], na.rm = TRUE)
+sites$solar <- rowMeans(sites[, grepl('Solar_', names(sites))], na.rm = TRUE)
+sites$wind <- rowMeans(sites[, grepl('Wind_', names(sites))], na.rm = TRUE)
+sites$landcover <- rowMeans(sites[, grepl('LC_', names(sites))], na.rm = TRUE)
 
-# View the first few rows of the final data frame
-head(sites)
+# Handle extreme values
+sites$elevation[sites$elevation < -4000] <- NA
+sites$vegetation[sites$vegetation > 200] <- NA
+
+# Select specific columns from the 'sites' data frame that are relevant for analysis.
+# Only columns matching the names listed in the vector are retained.
+sites <- sites[, which(colnames(sites) %in% c('id', 'year', 'Bio_1', 'Bio_4', 
+                                              'Bio_12', 'Bio_15', 'elevation', 
+                                              'vegetation', 'solar', 'wind', 
+                                              'landcover'))]
+
+# Rename the selected columns in 'sites' to more concise, standardized names.
+colnames(sites) <- c('id', 'year', 'Temp', 'TSeas', 'Rain', 'RSeas', 'Ele', 
+                     'Veg', 'Solar', 'Wind', 'LC')
+
+# Recode the levels of the 'LC' (land cover) column with descriptive category names.
+# This makes the categories more interpretable for analysis and visualization.
+levels(sites$LC) <- c('Broad_ever', 'Broad_deciduous', 'Needle_ever', 
+                      'Needle_deciduous', 'Mixed_forest', 'Tree_open', 
+                      'Shrub', 'Herbaceous', 'Sparse_veg', 'Crop', 
+                      'Paddy_field', 'Veg_mosaic', 'Wetland', 'Urban', 
+                      'Water_bodies')
+
+# Read in a separate CSV file containing additional site information (coordinates).
+# Only select columns 2 through 4 and column 14 for merging.
+coords <- read.csv('../data/processed/America_Anura_site.csv')[, c(2:4, 14)]
+
+# Merge the 'sites' and 'coords' data frames by 'id' and 'year' columns.
+# Keep all rows from 'sites' (all.x = T) but only matching rows from 'coords' (all.y = F).
+sites <- merge(x = sites, y = coords, by = c('id', 'year'), all.x = TRUE, all.y = FALSE)
+

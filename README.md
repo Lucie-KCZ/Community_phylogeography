@@ -67,36 +67,22 @@ This script processes and cleans genetic lineage data, converting it into spatia
 
 ### 4. Environmental Data Extraction Script
 
-**Script Name**: `0_environment_data.R`
-
-**Authors**: Lucie Kuczynski, Katharine Marske  
-**Last Edit**: November 2024
-
 This script is used to process and extract environmental data from multiple raster files, matching these data to specific sampling sites in the community dataset. It performs spatial data extraction, aggregation, and finalizes the data for downstream ecological analysis.
 
-**Key Steps and Components**:
-
 1. **Setup and Preparation**  
-   - The script starts by clearing memory and loading required libraries (`raster`, `sf`, `progress`, `dplyr`).
-   - The function `generate_file_names()` generates meaningful names for each raster file based on its directory, assigning prefixes (e.g., "Ele" for elevation) and numbers for easier identification.
+  The function `generate_file_names()` generates meaningful names for each raster file based on its directory, assigning prefixes (e.g., "Ele" for elevation) and numbers for easier identification.
 
-2. **Processing Raster Data**  
-   - The `process_single_raster()` function takes a raster file, extracts values at specified coordinates (sampling sites), and returns these values in a structured format.
-   - A list of raster files is created by recursively searching a specified directory, and a progress bar tracks the extraction process.
-   - For each raster, environmental data is extracted for sampling sites based on latitude and longitude.
+1. **Processing Raster Data**  
+  The `process_single_raster()` function takes a raster file, extracts values at specified coordinates (sampling sites), and returns these values in a structured format.
 
-3. **Combining and Aggregating Environmental Data**  
-   - The extracted data from each raster file is combined with site data into a final data frame.
-   - Key environmental variables such as elevation, vegetation cover, solar radiation, wind, and land cover are aggregated by summing or averaging specific columns.
-   - The script applies data cleaning to handle extreme values for certain variables (e.g., replacing elevation values below -4000 with NA).
+1. **Combining and Aggregating Environmental Data**  
+  The extracted data from each raster file is combined with site data into a final data frame.
+  The script applies data cleaning to handle extreme values for certain variables (e.g., replacing elevation values below -4000 with NA).
 
-4. **Data Formatting**  
-   - The script renames columns to provide consistent, meaningful labels (e.g., "Bio_1" becomes "Temp" for temperature).
-   - The land cover (LC) column is recoded with specific labels (e.g., "Broad_ever" for broad-leaved evergreen forests).
-   - The final processed data frame includes site identifiers, spatial coordinates, and aggregated environmental variables ready for ecological and statistical analysis.
+1. **Data Formatting**  
 
 **Output**  
-The resulting data frame provides environmental attributes matched to each sampling site, which can be used in further ecological analyses, such as examining the influence of environmental variables on community structure or species distributions.
+The resulting data frame provides environmental attributes matched to each sampling site.
 
 ---
 
